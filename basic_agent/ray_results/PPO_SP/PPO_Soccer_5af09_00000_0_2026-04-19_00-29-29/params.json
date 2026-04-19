@@ -1,0 +1,24 @@
+{
+  "env": "Soccer",
+  "env_config": {
+    "flatten_branched": true,
+    "multiagent": false,
+    "num_envs_per_worker": 3,
+    "opponent_policy": "<function <lambda> at 0x155445621af0>",
+    "single_player": true,
+    "variation": "EnvType.team_vs_policy"
+  },
+  "framework": "torch",
+  "log_level": "INFO",
+  "model": {
+    "fcnet_hiddens": [
+      512
+    ],
+    "vf_share_layers": true
+  },
+  "num_envs_per_worker": 3,
+  "num_gpus": 0,
+  "num_workers": 8,
+  "rollout_fragment_length": 500,
+  "train_batch_size": 12000
+}
