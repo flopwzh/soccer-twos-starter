@@ -7,6 +7,8 @@ from utils import create_rllib_env
 
 NUM_ENVS_PER_WORKER = 3
 
+# changed settings: fcnet_hiddens, timesteps_total, checkpoint_freq
+
 
 if __name__ == "__main__":
     ray.init(include_dashboard=False)
@@ -35,16 +37,16 @@ if __name__ == "__main__":
             },
             "model": {
                 "vf_share_layers": True,
-                "fcnet_hiddens": [512],
+                "fcnet_hiddens": [512,512],
             },
             "rollout_fragment_length": 500,
             "train_batch_size": 12000,
         },
         stop={
-            "timesteps_total": 20000000,  # 15M
+            "timesteps_total": 15000000,  # 15M
             # "time_total_s": 14400, # 4h
         },
-        checkpoint_freq=100,
+        checkpoint_freq=50,
         checkpoint_at_end=True,
         local_dir="./ray_results",
         # restore="./ray_results/PPO_selfplay_1/PPO_Soccer_ID/checkpoint_00X/checkpoint-X",
