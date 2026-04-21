@@ -37,7 +37,7 @@ if __name__ == "__main__":
             },
             "model": {
                 "vf_share_layers": True,
-                "fcnet_hiddens": [512,512],
+                "fcnet_hiddens": [512],
             },
             "rollout_fragment_length": 500,
             "train_batch_size": 12000,
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         checkpoint_freq=50,
         checkpoint_at_end=True,
         local_dir="./ray_results",
-        # restore="./ray_results/PPO_selfplay_1/PPO_Soccer_ID/checkpoint_00X/checkpoint-X",
+        restore="./basic_agent/ray_results/PPO_SP/PPO_Soccer_5af09_00000_0_2026-04-19_00-29-29/checkpoint_000500/checkpoint-500",
     )
 
     # Gets best trial based on max accuracy across all training iterations.

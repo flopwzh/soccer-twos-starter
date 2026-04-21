@@ -5,11 +5,11 @@ from soccer_twos import EnvType
 from utils import create_rllib_env
 
 
-NUM_ENVS_PER_WORKER = 1
+NUM_ENVS_PER_WORKER = 3
 
 
 if __name__ == "__main__":
-    ray.init()
+    ray.init(include_dashboard=False)
 
     tune.registry.register_env("Soccer", create_rllib_env)
     temp_env = create_rllib_env({"variation": EnvType.multiagent_player})
@@ -23,7 +23,7 @@ if __name__ == "__main__":
         config={
             # system settings
             "num_gpus": 0,
-            "num_workers": 1,
+            "num_workers": 8,
             "num_envs_per_worker": NUM_ENVS_PER_WORKER,
             "log_level": "INFO",
             "framework": "torch",
