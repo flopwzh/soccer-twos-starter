@@ -1,3 +1,4 @@
+# from logging import config
 import pickle
 import os
 from typing import Dict
@@ -9,16 +10,33 @@ from ray import tune
 from ray.rllib.env.base_env import BaseEnv
 from ray.tune.registry import get_trainable_cls
 
+from gym_unity.envs import ActionFlattener
+from gym.spaces import Discrete
+from utils import create_rllib_env
+
 from soccer_twos import AgentInterface
 
 
 ALGORITHM = "PPO"
 CHECKPOINT_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
-    "./ray_results/PPO_SP/PPO_Soccer_5af09_00000_0_2026-04-19_00-29-29/checkpoint_000500",
+    "./ray_results/PPO_SP/PPO_Soccer_5af09_00000_0_2026-04-19_00-29-29/checkpoint_000500/checkpoint-500",
 )
 POLICY_NAME = "default"  # this may be useful when training with selfplay
 
+class DummyEnv(gym.Env):
+    def __init__(self, config):
+        self.observation_space = config["observation_space"]
+        self.action_space = config["action_space"]
+
+    def reset(self):
+        return self.observation_space.sample()
+    
+    def step(self, action):
+        return self.observation_space.sample(), 0, True, {}
+    
+    def close(self):
+        pass
 
 class RayAgent(AgentInterface):
     """
@@ -56,10 +74,29 @@ class RayAgent(AgentInterface):
         # no need for parallelism on evaluation
         config["num_workers"] = 0
         config["num_gpus"] = 0
+        config["num_envs_per_worker"] = 1
+        config["explore"] = False
 
         # create a dummy env since it's required but we only care about the policy
-        tune.registry.register_env("DummyEnv", lambda *_: BaseEnv())
-        config["env"] = "DummyEnv"
+        env_name = "DummyEnv"
+        tune.registry.register_env(env_name, lambda c: DummyEnv(c))
+        config["env"] = env_name
+
+        train_env_cfg = config.get("env_config", {})
+        flattened = train_env_cfg.get("flatten_branched", False)
+
+        if flattened:
+            trainer_action_space = Discrete(int(np.prod(env.action_space.nvec)))
+        else:
+            trainer_action_space = env.action_space
+
+        config["env_config"] = {
+            "observation_space": env.observation_space,
+            "action_space": trainer_action_space,
+        }
+
+        self.use_flattener = config.get("env_config", {}).get("flatten_branched", True)
+        self.flattener = ActionFlattener(env.action_space.nvec)
 
         # create the Trainer from config
         cls = get_trainable_cls(ALGORITHM)
@@ -67,7 +104,8 @@ class RayAgent(AgentInterface):
         # load state from checkpoint
         agent.restore(CHECKPOINT_PATH)
         # get policy for evaluation
-        self.policy = agent.get_policy(POLICY_NAME)
+        # self.policy = agent.get_policy(POLICY_NAME)
+        self.policy = agent.get_policy()
 
     def act(self, observation: Dict[int, np.ndarray]) -> Dict[int, np.ndarray]:
         """The act method is called when the agent is asked to act.
@@ -83,7 +121,11 @@ class RayAgent(AgentInterface):
         for player_id in observation:
             # compute_single_action returns a tuple of (action, action_info, ...)
             # as we only need the action, we discard the other elements
-            actions[player_id], *_ = self.policy.compute_single_action(
-                observation[player_id]
-            )
+            # actions[player_id], *_ = self.policy.compute_single_action(
+            #     observation[player_id]
+            # )
+            action, *_ = self.policy.compute_single_action(observation[player_id], explore=False)
+            if np.isscalar(action):
+                action = self.flattener.lookup_action(int(action))
+            actions[player_id] = action
         return actions
