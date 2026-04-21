@@ -5,7 +5,7 @@ from soccer_twos import EnvType
 from utils import create_rllib_env
 
 
-NUM_ENVS_PER_WORKER = 3
+NUM_ENVS_PER_WORKER = 1
 
 
 if __name__ == "__main__":
@@ -22,8 +22,8 @@ if __name__ == "__main__":
         name="PPO_selfplay_1",
         config={
             # system settings
-            "num_gpus": 1,
-            "num_workers": 6,
+            "num_gpus": 0,
+            "num_workers": 1,
             "num_envs_per_worker": NUM_ENVS_PER_WORKER,
             "log_level": "INFO",
             "framework": "torch",
@@ -40,6 +40,11 @@ if __name__ == "__main__":
                 "num_envs_per_worker": NUM_ENVS_PER_WORKER,
                 "variation": EnvType.multiagent_player,
             },
+            "model":{
+                "fcnet_hiddens": [512, 512],
+                "fcnet_activation": "relu",
+                "vf_share_layers": True,
+            }
         },
         stop={
             "timesteps_total": 15000000,  # 15M
