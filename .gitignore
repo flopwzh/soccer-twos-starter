@@ -5,6 +5,7 @@ data/
 old_ray_results/
 utils_old_code.py
 wrappers.py
+debug_env.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
