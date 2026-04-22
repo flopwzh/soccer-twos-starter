@@ -18,7 +18,7 @@
     "policies_to_train": [
       "default"
     ],
-    "policy_mapping_fn": "<function <lambda> at 0x1546b01a8940>"
+    "policy_mapping_fn": "<function <lambda> at 0x1546581074c0>"
   },
   "num_envs_per_worker": 3,
   "num_gpus": 0,
