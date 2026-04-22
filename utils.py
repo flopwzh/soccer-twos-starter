@@ -29,14 +29,17 @@ class RewardsWrapper(gym.core.Wrapper):
         #     self.action_space_n = len(env.action_space.nvec)
         # else:
         #     raise ValueError("Unsupported action space type")
+
+        # first run: concede 5, goal mult 1, living penalty -0.001, centering reward 0.05, clamp ball progress to 15, vel bonus to +-2
+        # second run: current file
         
         # reward shaping parameters
-        self.living_penalty = -0.001
-        self.goal_reward_mult = 1.0
+        self.living_penalty = -0.002
+        self.goal_reward_mult = 5.0
         self.progress_reward = 0.05
         self.ball_velocity_reward = 0.01
-        self.centering_reward = 0.05
-        self.concede_penalty = -5.0
+        self.centering_reward = 0.03
+        self.concede_penalty = -0.5
         self.out_of_position_penalty = -0.05
         
         self.elapsed_time = 0
@@ -60,7 +63,7 @@ class RewardsWrapper(gym.core.Wrapper):
 
             # progress towards opponent goal
             if ball_pos is not None:
-                progress = np.clip((ball_pos[0] - 0)/15, 0, 1) * team_val
+                progress = np.clip((ball_pos[0] - 0)/20, 0, 1) * team_val
                 total_bonus += self.progress_reward * progress
             
             # ball velocity towards opponent goal
@@ -71,7 +74,7 @@ class RewardsWrapper(gym.core.Wrapper):
             # once ball is on attacking side, reward centering
             if ball_pos is not None and ball_vel is not None and (ball_pos[0] * team_val) > 0:
                 vel_towards_center = -np.sign(ball_pos[1]) * ball_vel[1]
-                vel_towards_center_clipped = np.clip(vel_towards_center, -2.0, 2.0)
+                vel_towards_center_clipped = np.clip(vel_towards_center, -1.0, 1.0)
                 total_bonus += self.centering_reward * vel_towards_center_clipped
 
             # penalty for being far from goal when opponent scores
