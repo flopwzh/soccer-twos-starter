@@ -34,13 +34,13 @@ class RewardsWrapper(gym.core.Wrapper):
         # second run: current file
         
         # reward shaping parameters
-        self.living_penalty = -0.001
+        self.living_penalty = -0.0005
         self.goal_reward_mult = 2.0
-        self.progress_reward = 0.02
+        self.progress_reward = 0.01
         # self.ball_velocity_reward = 0.01
-        self.centering_reward = 0.02
-        self.concede_penalty = -1.0
-        self.out_of_position_penalty = -0.002
+        # self.centering_reward = 0.02
+        # self.concede_penalty = -1.0
+        self.out_of_position_penalty = -0.001
         
         self.elapsed_time = 0
         self.prev_ball_pos = None
@@ -67,6 +67,7 @@ class RewardsWrapper(gym.core.Wrapper):
             if ball_pos is not None and self.prev_ball_pos is not None:
                 # ball pos - prev should be positive for left team, negative for right
                 progress = (ball_pos[0] - self.prev_ball_pos[0]) * team_val # now positive for correct direction
+                progress = progress if progress > 0 else progress * 0.2
                 # progress = ball_pos[0] * team_val
                 # progress = np.clip(progress / 20, 0, 1)
                 # progress = np.clip((ball_pos[0] - 0)/20, 0, 1) * team_val
@@ -83,7 +84,7 @@ class RewardsWrapper(gym.core.Wrapper):
                 vel_towards_center = -np.sign(ball_pos[1]) * ball_vel[1]
                 vel_towards_center = vel_towards_center if vel_towards_center > 0 else vel_towards_center * 0.2
                 vel_towards_center_clipped = np.clip(vel_towards_center, -1.0, 1.0)
-                total_bonus += self.centering_reward * vel_towards_center_clipped
+                # total_bonus += self.centering_reward * vel_towards_center_clipped
 
             # penalty for being far from goal when opponent scores
             # done_all = dones.get("__all__", False)
@@ -100,15 +101,17 @@ class RewardsWrapper(gym.core.Wrapper):
                 player_pos = infos.get(agent_id, {}).get("player_info", {}).get("position")
                 if player_pos is not None:
                     player_ball_x_diff = (player_pos[0] - ball_pos[0]) * team_val # should be negative if player is betwen ball and goal
-                    total_bonus += self.out_of_position_penalty * np.clip(player_ball_x_diff, 0, 1)
+                    # want to punish if on the wrong side of the ball
+                    total_bonus += self.out_of_position_penalty * np.clip(player_ball_x_diff, 0, 10) / 5
             
             # concede penalty
             if dones.get("__all__", False) and base_reward < 0:
-                total_bonus += self.concede_penalty
-
+                # total_bonus += self.concede_penalty
+                pass
+                
             # clip and sum bonuses
             total_bonus = np.clip(total_bonus, -10.0, 10.0)
-            shaped[agent_id] = self.goal_reward_mult * base_reward + total_bonus
+            shaped[agent_id] = self.goal_reward_mult * base_reward #+ total_bonus
         
         # update ball position for next step
         if ball_pos is not None:
